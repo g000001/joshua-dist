@@ -211,7 +211,7 @@
    (let ((*forward-rule-trigger-compiler-environment* environment))
      (declare (special *forward-rule-trigger-compiler-environment*))
      ;; first, parse up the arguments to the control structure
-     (with-control-structure-arguments ((importance semi-unification certainty documentatoin) arguments)
+     (with-control-structure-arguments ((importance semi-unification certainty documentation) arguments)
        ;; this implementation is a kludge that awaits the rest of the generic rule compiler.
        ;; its advantage over the previous implementation is that all the kludges are in the same place!
        (setq importance (process-importance importance))
