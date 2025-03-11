@@ -166,7 +166,7 @@
   ;;needs no clear-model method, 'cause it's never really told.
   )
 
-(define-predicate-method (say and-model) (&optional (stream *standard-output*))
+#|(define-predicate-method (say and-model) (&optional (stream *standard-output*))
   ;; how to say conjunctions
   (with-slots (predications) self
     (loop for p-tail on predications
@@ -177,7 +177,21 @@
 	  finally
 	    (when (cdr p-tail)
 	      (write-string " and " stream)
-	      (say (cadr p-tail) stream)))))
+	      (say (cadr p-tail) stream)))))|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD SAY ((SELF AND-MODEL) &OPTIONAL (STREAM *STANDARD-OUTPUT*))
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATIONS)
+          SELF
+        (LOOP FOR P-TAIL ON PREDICATIONS AS P = (CAR P-TAIL)
+              DOING (SAY P STREAM)
+              WHILE (CDDR P-TAIL)
+              DOING (WRITE-STRING ", " STREAM)
+              FINALLY (WHEN (CDR P-TAIL)
+                        (WRITE-STRING " and " STREAM)
+                        (SAY (CADR P-TAIL) STREAM)))))))
 									    
 (define-predicate-method (expand-forward-rule-trigger and-model) (var-name truth-value context bound-variables)
   (declare (ignore var-name bound-variables))
@@ -244,7 +258,7 @@
 					     (list do-rules do-questions)
 					     context)))
 
-(define-predicate-method (tell and-model) (truth-value justification)
+#|(define-predicate-method (tell and-model) (truth-value justification)
   (with-slots (predications) self
     (truth-value-case truth-value
       (+true+
@@ -260,7 +274,31 @@
 	     (t
 	      (error "I don't know how to TELL [NOT [AND <two or more things>]]."))))))
   ;; return the conjunct
-  self)
+  self)|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD TELL-INTERNAL ((SELF AND-MODEL) TRUTH-VALUE JUSTIFICATION)
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATIONS)
+          SELF
+        (TRUTH-VALUE-CASE TRUTH-VALUE
+                          (+TRUE+
+                           (LOOP FOR PREDICATION IN PREDICATIONS
+                                 DOING (TELL-INTERNAL PREDICATION +TRUE+
+                                                      JUSTIFICATION)))
+                          (+FALSE+
+                           (COND
+                            ((NULL PREDICATIONS)
+                             (ERROR "[NOT [AND]] is a contradiction."))
+                            ((AND (CONSP PREDICATIONS)
+                                  (NULL (REST PREDICATIONS)))
+                             (TELL-INTERNAL (FIRST PREDICATIONS) +FALSE+
+                                            JUSTIFICATION))
+                            (T
+                             (ERROR
+                              "I don't know how to TELL [NOT [AND <two or more things>]]."))))))
+      SELF)))
 
 (defun list-of-predications-p (thing)
   (or (null thing)
@@ -268,7 +306,7 @@
 	   (predicationp (car thing))
 	   (list-of-predications-p (cdr thing)))))
 
-(define-predicate-method (ask and-model) (truth-value continuation do-backward-rules do-questions)
+#|(define-predicate-method (ask and-model) (truth-value continuation do-backward-rules do-questions)
   (with-slots (predications) self
     (labels ((ask-and (preds derivations)
 	       (if (null preds)
@@ -297,7 +335,39 @@
 				+false+
 				continuation
 				do-backward-rules do-questions))))
-      (values))))
+      (values))))|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD ASK-INTERNAL
+             ((SELF AND-MODEL) TRUTH-VALUE CONTINUATION DO-BACKWARD-RULES
+              DO-QUESTIONS)
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATIONS)
+          SELF
+        (LABELS ((ASK-AND (PREDS DERIVATIONS)
+                   (IF (NULL PREDS)
+                       (LET ((AND-DERIVATION
+                              `(,SELF ,TRUTH-VALUE AND
+                                ,@(REVERSE DERIVATIONS))))
+                         (FUNCALL CONTINUATION AND-DERIVATION))
+                       (ASK-INTERNAL (FIRST PREDS) +TRUE+
+                                     #'(LAMBDA (DERIVATION)
+                                         (LET ((MORE-DERIVATIONS
+                                                `(,DERIVATION ,@DERIVATIONS)))
+                                           (ASK-AND (REST PREDS)
+                                            MORE-DERIVATIONS)))
+                                     DO-BACKWARD-RULES DO-QUESTIONS))))
+          (UNLESS (LIST-OF-PREDICATIONS-P PREDICATIONS)
+            (ERROR 'MODEL-CANT-HANDLE-QUERY :QUERY SELF :MODEL 'AND-MODEL))
+          (TRUTH-VALUE-CASE TRUTH-VALUE (+TRUE+ (ASK-AND PREDICATIONS NIL))
+                            (+FALSE+
+                             (LOOP FOR PREDICATION IN PREDICATIONS
+                                   DO (ASK-INTERNAL PREDICATION +FALSE+
+                                                    CONTINUATION
+                                                    DO-BACKWARD-RULES
+                                                    DO-QUESTIONS))))
+          (VALUES))))))
 
 ;;; This model treats the telling of everything within the and as atomic
 ;;; as far as forward rule triggering goes.
@@ -313,7 +383,7 @@
   ;; needs no clear-model method, 'cause it's never really told
   )
 
-(define-predicate-method (say or-model) (&optional (stream *standard-output*))
+#|(define-predicate-method (say or-model) (&optional (stream *standard-output*))
   ;; how to say disjunctions
   (with-slots (predications) self
     (loop for p-tail on predications
@@ -324,7 +394,21 @@
 	  finally
 	    (when (cdr p-tail)
 	      (write-string " or " stream)
-	      (say (cadr p-tail) stream)))))
+	      (say (cadr p-tail) stream)))))|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD SAY ((SELF OR-MODEL) &OPTIONAL (STREAM *STANDARD-OUTPUT*))
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATIONS)
+          SELF
+        (LOOP FOR P-TAIL ON PREDICATIONS AS P = (CAR P-TAIL)
+              DOING (SAY P STREAM)
+              WHILE (CDDR P-TAIL)
+              DOING (WRITE-STRING ", " STREAM)
+              FINALLY (WHEN (CDR P-TAIL)
+                        (WRITE-STRING " or " STREAM)
+                        (SAY (CADR P-TAIL) STREAM)))))))
 
 (define-predicate-method (expand-forward-rule-trigger or-model) (var-name truth-value context bound-variables)
   (declare (ignore var-name bound-variables))
@@ -340,7 +424,7 @@
 	   `(:or ,@(parse-pattern-for-expand-backward-action statement +true+ context)))
 	  (t `(:and ,@(parse-pattern-for-expand-backward-action statement +false+ context))))))
 
-(define-predicate-method (tell or-model) (truth-value justification)
+#|(define-predicate-method (tell or-model) (truth-value justification)
   (with-slots (predications) self
     (truth-value-case truth-value
       (+true+
@@ -356,9 +440,33 @@
        (loop for predication in predications
 	     doing (tell-internal predication +false+ justification)))))
   ;; return the conjunct
-  self)
+  self)|#
 
-(define-predicate-method (ask or-model) (truth-value continuation do-backward-rules do-questions)
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD TELL-INTERNAL ((SELF OR-MODEL) TRUTH-VALUE JUSTIFICATION)
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATIONS)
+          SELF
+        (TRUTH-VALUE-CASE TRUTH-VALUE
+                          (+TRUE+
+                           (COND
+                            ((NULL PREDICATIONS)
+                             (ERROR "[OR] is a contradiction."))
+                            ((AND (CONSP PREDICATIONS)
+                                  (NULL (REST PREDICATIONS)))
+                             (TELL-INTERNAL (FIRST PREDICATIONS) +TRUE+
+                                            JUSTIFICATION))
+                            (T
+                             (ERROR
+                              "I don't know how to TELL [OR <two or more things>]."))))
+                          (+FALSE+
+                           (LOOP FOR PREDICATION IN PREDICATIONS
+                                 DOING (TELL-INTERNAL PREDICATION +FALSE+
+                                                      JUSTIFICATION)))))
+      SELF)))
+
+#|(define-predicate-method (ask or-model) (truth-value continuation do-backward-rules do-questions)
   (with-slots (predications) self
     (unless (list-of-predications-p predications)
       (error
@@ -386,7 +494,40 @@
 				do-backward-rules do-questions)))
 	(+false+
 	 (ask-and predications nil)))
-      (values))))
+      (values))))|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD ASK-INTERNAL
+             ((SELF OR-MODEL) TRUTH-VALUE CONTINUATION DO-BACKWARD-RULES
+              DO-QUESTIONS)
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATIONS)
+          SELF
+        (UNLESS (LIST-OF-PREDICATIONS-P PREDICATIONS)
+          (ERROR 'MODEL-CANT-HANDLE-QUERY :QUERY SELF :MODEL 'OR-MODEL))
+        (LABELS ((ASK-AND (PREDS DERIVATIONS)
+                   (IF (NULL PREDS)
+                       (WITH-STACK-LIST* (AND-DERIVATION SELF TRUTH-VALUE 'OR
+                                          (REVERSE DERIVATIONS))
+                         (FUNCALL CONTINUATION AND-DERIVATION))
+                       (ASK-INTERNAL (FIRST PREDS) +FALSE+
+                                     #'(LAMBDA (DERIVATION)
+                                         (WITH-STACK-LIST* (MORE-DERIVATIONS
+                                                            DERIVATION
+                                                            DERIVATIONS)
+                                           (ASK-AND (REST PREDS)
+                                            MORE-DERIVATIONS)))
+                                     DO-BACKWARD-RULES DO-QUESTIONS))))
+          (TRUTH-VALUE-CASE TRUTH-VALUE
+                            (+TRUE+
+                             (LOOP FOR PREDICATION IN PREDICATIONS
+                                   DO (ASK-INTERNAL PREDICATION +TRUE+
+                                                    CONTINUATION
+                                                    DO-BACKWARD-RULES
+                                                    DO-QUESTIONS)))
+                            (+FALSE+ (ASK-AND PREDICATIONS NIL)))
+          (VALUES))))))
 
 (define-predicate-model not-model () (default-rule-compilation-model)
   )
@@ -399,11 +540,20 @@
   (let ((statement (predication-maker-statement self)))
     (expand-backward-rule-action (cadr statement) name (negate-truth-value truth-value) other-ask-args context)))
 
-(define-predicate-method (tell not-model) (truth-value justification)
+#|(define-predicate-method (tell not-model) (truth-value justification)
   (with-slots (predication) self
-    (tell-internal predication (negate-truth-value truth-value) justification)))
+    (tell-internal predication (negate-truth-value truth-value) justification)))|#
 
-(define-predicate-method (ask not-model) (truth-value continuation do-backward-rules do-questions)
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD TELL-INTERNAL ((SELF NOT-MODEL) TRUTH-VALUE JUSTIFICATION)
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATION)
+          SELF
+        (TELL-INTERNAL PREDICATION (NEGATE-TRUTH-VALUE TRUTH-VALUE)
+                       JUSTIFICATION)))))
+
+#|(define-predicate-method (ask not-model) (truth-value continuation do-backward-rules do-questions)
   (with-slots (predication) self
     (unless (predicationp predication)
       (error
@@ -412,7 +562,20 @@
 	:model 'not-model))
     (ask-internal predication (negate-truth-value truth-value)
 		  continuation
-		  do-backward-rules do-questions)))
+		  do-backward-rules do-questions)))|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD ASK-INTERNAL
+             ((SELF NOT-MODEL) TRUTH-VALUE CONTINUATION DO-BACKWARD-RULES
+              DO-QUESTIONS)
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATION)
+          SELF
+        (UNLESS (PREDICATIONP PREDICATION)
+          (ERROR 'MODEL-CANT-HANDLE-QUERY :QUERY SELF :MODEL 'NOT-MODEL))
+        (ASK-INTERNAL PREDICATION (NEGATE-TRUTH-VALUE TRUTH-VALUE) CONTINUATION
+                      DO-BACKWARD-RULES DO-QUESTIONS)))))
 
 (define-predicate and-internal (&rest predications) (and-model trivial-tms-mixin)
   #+++ignore (:conc-name and-)
@@ -449,7 +612,7 @@
 
 (define-predicate-model variable-predicate-model () (default-predicate-model))
 
-(define-predicate-method (ask variable-predicate-model) (truth-value continuation do-backward-rules do-questions)
+#|(define-predicate-method (ask variable-predicate-model) (truth-value continuation do-backward-rules do-questions)
   (maphash
     #'(lambda (predicate descriptor &aux (args-info (predicate-descriptor-args-info descriptor)))
 	(when args-info
@@ -471,7 +634,44 @@
 		     (unify query self)
 		     (ask-internal query truth-value continuation do-backward-rules do-questions)))))))
     *all-predicates*)
-  (values))
+  (values))|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD ASK-INTERNAL
+             ((SELF VARIABLE-PREDICATE-MODEL) TRUTH-VALUE CONTINUATION
+              DO-BACKWARD-RULES DO-QUESTIONS)
+    (WITH-SLOTS NIL
+        SELF
+      (MAPHASH
+       #'(LAMBDA
+             (PREDICATE DESCRIPTOR
+              &AUX (ARGS-INFO (PREDICATE-DESCRIPTOR-ARGS-INFO DESCRIPTOR)))
+           (WHEN ARGS-INFO
+             (CATCH 'ASK-VARIABLE-PREDICATE-ESCAPE
+               (LET* ((ARGLIST
+                       (LOOP FOR
+                             COUNT BELOW (PREDICATE-MAX-ARGS ARGS-INFO)
+                             COLLECT (MAKE-UNBOUND-LOGIC-VARIABLE
+                                      (GENTEMP
+                                       *ANONYMOUS-PREFIX*)) INTO VARIABLE-LIST
+                             FINALLY (UNLESS
+                                         (ZEROP (PREDICATE-REST-ARG ARGS-INFO))
+                                       (LET ((TAILVAR
+                                              (MAKE-UNBOUND-LOGIC-VARIABLE
+                                               (GENTEMP *ANONYMOUS-PREFIX*))))
+                                         (IF (NULL VARIABLE-LIST)
+                                             (SETQ VARIABLE-LIST TAILVAR)
+                                             (SETF (CDR (LAST VARIABLE-LIST))
+                                                     TAILVAR)))) (RETURN
+                                                                  VARIABLE-LIST)))
+                      (QUERY (MAKE-PREDICATION `(,PREDICATE ,.ARGLIST))))
+                 (UNLESS (TYPEP QUERY 'VARIABLE-PREDICATE-MODEL)
+                   (WITH-UNIFICATION
+                     (UNIFY QUERY SELF)
+                     (ASK-INTERNAL QUERY TRUTH-VALUE CONTINUATION
+                                   DO-BACKWARD-RULES DO-QUESTIONS)))))))
+       *ALL-PREDICATES*)
+      (VALUES))))
 
 (define-predicate variable-predicate (&rest arguments) (variable-predicate-model trivial-tms-mixin))
 
@@ -581,7 +781,7 @@
        ,bound-variables
        ,self)))
 
-(define-predicate-method (ask known-model) (truth-value continuation do-backward-rules do-questions)
+#|(define-predicate-method (ask known-model) (truth-value continuation do-backward-rules do-questions)
   (with-slots (predication) self
     (unless (predicationp predication)
       (error
@@ -611,7 +811,56 @@
 		 t))
 	 (with-stack-list (unknown-derivation self truth-value 'unknown)
 	   (funcall continuation unknown-derivation))))))
-  (values))
+  (values))|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD ASK-INTERNAL
+             ((SELF KNOWN-MODEL) TRUTH-VALUE CONTINUATION DO-BACKWARD-RULES
+              DO-QUESTIONS)
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATION)
+          SELF
+        (UNLESS (PREDICATIONP PREDICATION)
+          (ERROR 'MODEL-CANT-HANDLE-QUERY :QUERY SELF :MODEL 'KNOWN-MODEL))
+        (TRUTH-VALUE-CASE TRUTH-VALUE
+                          (+TRUE+
+                           (FLET ((KNOWN-CONTINUATION (DERIVATION)
+                                    (WITH-STACK-LIST (KNOWN-DERIVATION SELF
+                                                      TRUTH-VALUE 'KNOWN
+                                                      DERIVATION)
+                                      (FUNCALL CONTINUATION KNOWN-DERIVATION))))
+                             (ASK-INTERNAL PREDICATION +TRUE+
+                                           #'KNOWN-CONTINUATION
+                                           DO-BACKWARD-RULES DO-QUESTIONS)
+                             (HANDLER-CASE
+                              (ASK-INTERNAL PREDICATION +FALSE+
+                                            #'KNOWN-CONTINUATION
+                                            DO-BACKWARD-RULES DO-QUESTIONS)
+                              (MODEL-CAN-ONLY-HANDLE-POSITIVE-QUERIES NIL
+                               NIL))))
+                          (+FALSE+
+                           (WHEN
+                               (BLOCK TRY-QUERIES
+                                 (FLET ((UNKNOWN-CONTINUATION (B-S)
+                                          (DECLARE (IGNORE B-S))
+                                          (RETURN-FROM TRY-QUERIES NIL)))
+                                   (ASK-INTERNAL PREDICATION +TRUE+
+                                                 #'UNKNOWN-CONTINUATION
+                                                 DO-BACKWARD-RULES
+                                                 DO-QUESTIONS)
+                                   (HANDLER-CASE
+                                    (ASK-INTERNAL PREDICATION +FALSE+
+                                                  #'UNKNOWN-CONTINUATION
+                                                  DO-BACKWARD-RULES
+                                                  DO-QUESTIONS)
+                                    (MODEL-CAN-ONLY-HANDLE-POSITIVE-QUERIES NIL
+                                     NIL))
+                                   T))
+                             (WITH-STACK-LIST (UNKNOWN-DERIVATION SELF
+                                               TRUTH-VALUE 'UNKNOWN)
+                               (FUNCALL CONTINUATION UNKNOWN-DERIVATION))))))
+      (VALUES))))
 
 (define-predicate known (predication) (known-model trivial-tms-mixin)
   :destructure-into-instance-variables)
@@ -619,7 +868,7 @@
 (define-predicate-model provable-model () (default-rule-compilation-model)
   )
 
-(define-predicate-method (ask provable-model) (truth-value continuation do-backward-rules do-questions)
+#|(define-predicate-method (ask provable-model) (truth-value continuation do-backward-rules do-questions)
   (with-slots (predication) self
     (unless (predicationp predication)
       (error
@@ -643,7 +892,43 @@
 	       t)
          (with-stack-list (unprovable-derivation self truth-value 'provable)
 	   (funcall continuation unprovable-derivation))))))
-  (values))
+  (values))|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD ASK-INTERNAL
+             ((SELF PROVABLE-MODEL) TRUTH-VALUE CONTINUATION DO-BACKWARD-RULES
+              DO-QUESTIONS)
+    (WITH-SLOTS NIL
+        SELF
+      (WITH-SLOTS (PREDICATION)
+          SELF
+        (UNLESS (PREDICATIONP PREDICATION)
+          (ERROR 'MODEL-CANT-HANDLE-QUERY :QUERY SELF :MODEL 'PROVABLE-MODEL))
+        (TRUTH-VALUE-CASE TRUTH-VALUE
+                          (+TRUE+
+                           (ASK-INTERNAL PREDICATION +TRUE+
+                                         #'(LAMBDA (DERIVATION)
+                                             (WITH-STACK-LIST (PROVABLE-DERIVATION
+                                                               SELF TRUTH-VALUE
+                                                               'PROVABLE
+                                                               DERIVATION)
+                                               (FUNCALL CONTINUATION
+                                                        PROVABLE-DERIVATION)))
+                                         DO-BACKWARD-RULES DO-QUESTIONS))
+                          (+FALSE+
+                           (WHEN
+                               (BLOCK TRY-QUERIES
+                                 (ASK-INTERNAL PREDICATION +TRUE+
+                                               #'(LAMBDA (B-S)
+                                                   (DECLARE (IGNORE B-S))
+                                                   (RETURN-FROM TRY-QUERIES
+                                                     NIL))
+                                               DO-BACKWARD-RULES DO-QUESTIONS)
+                                 T)
+                             (WITH-STACK-LIST (UNPROVABLE-DERIVATION SELF
+                                               TRUTH-VALUE 'PROVABLE)
+                               (FUNCALL CONTINUATION UNPROVABLE-DERIVATION))))))
+      (VALUES))))
 
 (define-predicate provable (predication) (provable-model trivial-tms-mixin)
   :destructure-into-instance-variables)
@@ -838,12 +1123,20 @@
   ;; this one really supports the TMS protocol.
   t)
 
-(define-predicate-method (untell basic-tms-mixin) ()
+#|(define-predicate-method (untell basic-tms-mixin) ()
   (loop for justification in (all-justifications self)
 	doing (unjustify self justification))
-  (uninsert self))
+  (uninsert self))|#
 
-(define-predicate-method (support basic-tms-mixin) (&optional filter)
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD UNTELL ((SELF BASIC-TMS-MIXIN))
+    (WITH-SLOTS NIL
+        SELF
+      (LOOP FOR JUSTIFICATION IN (ALL-JUSTIFICATIONS SELF)
+            DOING (UNJUSTIFY SELF JUSTIFICATION))
+      (UNINSERT SELF))))
+
+#|(define-predicate-method (support basic-tms-mixin) (&optional filter)
   "Returns the predication leaves of the support tree for a predication"
   ;; filter is a function to apply to the unit justification to see if you want to collect it
   ;; nil means collect everything
@@ -867,9 +1160,49 @@
                      (if (and filter (funcall filter predication))
                        (list predication)
 		       (trace-support-through-justification current-justification)))))))
-      (trace-support-through-predication self))))
+      (trace-support-through-predication self))))|#
 
-(define-predicate-method (consequences basic-tms-mixin) ()
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD SUPPORT ((SELF BASIC-TMS-MIXIN) &OPTIONAL FILTER)
+    (WITH-SLOTS NIL
+        SELF
+      "Returns the predication leaves of the support tree for a predication"
+      (LET ((GENERATION (INCF *GENERATION-COUNTER*)))
+        (LABELS ((TRACE-SUPPORT-THROUGH-JUSTIFICATION (JUSTIFICATION)
+                   (MULTIPLE-VALUE-BIND
+                       (MNEMONIC CONSEQUENT TRUE-SUPPORT FALSE-SUPPORT
+                                 UNKNOWN-SUPPORT)
+                       (DESTRUCTURE-JUSTIFICATION JUSTIFICATION)
+                     (DECLARE (IGNORE MNEMONIC))
+                     (COND
+                      ((AND
+                        (AND (NULL TRUE-SUPPORT) (NULL FALSE-SUPPORT)
+                             (NULL UNKNOWN-SUPPORT))
+                        (OR (NULL FILTER) (FUNCALL FILTER JUSTIFICATION)))
+                       (LIST CONSEQUENT))
+                      (T
+                       (LOOP FOR SUPPORTER IN (APPEND TRUE-SUPPORT
+                                                      FALSE-SUPPORT
+                                                      UNKNOWN-SUPPORT)
+                             NCONC (TRACE-SUPPORT-THROUGH-PREDICATION
+                                    SUPPORTER))))))
+                 (TRACE-SUPPORT-THROUGH-PREDICATION (PREDICATION)
+                   (WHEN (NULL (PREDICATION-GENERATION-MARK PREDICATION))
+                     (SETF (PREDICATION-GENERATION-MARK PREDICATION) -1))
+                   (UNLESS
+                       (= (PREDICATION-GENERATION-MARK PREDICATION) GENERATION)
+                     (SETF (PREDICATION-GENERATION-MARK PREDICATION)
+                             GENERATION)
+                     (LET ((CURRENT-JUSTIFICATION
+                            (CURRENT-JUSTIFICATION PREDICATION)))
+                       (WHEN CURRENT-JUSTIFICATION
+                         (IF (AND FILTER (FUNCALL FILTER PREDICATION))
+                             (LIST PREDICATION)
+                             (TRACE-SUPPORT-THROUGH-JUSTIFICATION
+                              CURRENT-JUSTIFICATION)))))))
+          (TRACE-SUPPORT-THROUGH-PREDICATION SELF))))))
+
+#|(define-predicate-method (consequences basic-tms-mixin) ()
   (let ((answer nil))
     (labels ((collect-pred (pred)
                (unless (member pred answer)
@@ -883,7 +1216,30 @@
                                     (eql just (current-justification consequent)))
                            (collect-pred consequent))))))
       (trace-pred self))
-    answer))
+    answer))|#
+
+(EVAL-WHEN (:COMPILE-TOPLEVEL :EXECUTE :LOAD-TOPLEVEL)
+  (DEFMETHOD CONSEQUENCES ((SELF BASIC-TMS-MIXIN))
+    (WITH-SLOTS NIL
+        SELF
+      (LET ((ANSWER NIL))
+        (LABELS ((COLLECT-PRED (PRED)
+                   (UNLESS (MEMBER PRED ANSWER)
+                     (PUSH PRED ANSWER)
+                     (TRACE-PRED PRED)))
+                 (TRACE-PRED (PRED)
+                   (LOOP FOR JUST IN (ALL-JUSTIFICATIONS PRED)
+                         DO (MULTIPLE-VALUE-BIND (MNEMONIC CONSEQUENT)
+                                (DESTRUCTURE-JUSTIFICATION JUST)
+                              (DECLARE (IGNORE MNEMONIC))
+                              (WHEN
+                                  (AND (NOT (EQL CONSEQUENT SELF))
+                                       (EQL JUST
+                                            (CURRENT-JUSTIFICATION
+                                             CONSEQUENT)))
+                                (COLLECT-PRED CONSEQUENT))))))
+          (TRACE-PRED SELF))
+        ANSWER))))
 
 (define-predicate-method (find-independent-support basic-tms-mixin) (assumption)
   (let ((dependents (consequences assumption)))

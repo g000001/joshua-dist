@@ -277,7 +277,7 @@
 		  (funcall *original-compile-file* input-pathname :output-file output-file)
 		  (funcall *original-compile-file* input-pathname))))))
 
-#-(or genera mcl allegro sbcl) (advise-compile-file)
+#-(or genera mcl ansi-cl) (advise-compile-file)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Notes on working with SBCL (and ASDF):

@@ -887,6 +887,7 @@
 ;;; including an assumption that is added to the justification
 (define-predicate assumption-for (predication) (ltms:ltms-predicate-model))
 
+#-lispworks
 (defun assume (predication &key justification)
   (if (null justification)
       (tell predication :justification :assumption)
@@ -895,4 +896,15 @@
 	      (assumption-pred (tell (predication-maker `(assumption-for ,interned-pred)) :justification :assumption)))
 	 (values
 	  (tell interned-pred :justification `(,mnemonic (,assumption-pred ,@positive) ,negative ,unknown))
+	  assumption-pred)))))
+
+#+lispworks
+(defun assume (predication &key justification)
+  (if (null justification)
+      (tell predication :justification :assumption)
+    (destructuring-bind (mnemonic &optional positive negative unknown) justification
+       (let* ((interned-pred (tell predication :justification :none))
+	      (assumption-pred (tell (predication-maker (list 'assumption-for interned-pred)) :justification :assumption)))
+	 (values
+	  (tell interned-pred :justification (list mnemonic (list* assumption-pred positive) negative unknown))
 	  assumption-pred)))))

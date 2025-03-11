@@ -192,7 +192,6 @@
 ;; Example declaration for COND:
 ;;	(DECLARE (ARG-TEMPLATE COND (REPEAT (TEST . BODY))))
 
-
 (DEFUN MAPFORMS (*MAPFORMS-FUNCTION* FORM
 		 &KEY (INITIAL-STATE NIL)
 		      (BOUND-VARIABLES 'NO-ENV)
@@ -432,7 +431,7 @@ an argument of T when an iteration is entered and NIL when it is left."
 	      ((EQ ORIGINAL-FORM ORIGINAL-BEFORE-MACRO-EXPANSION) (return FORM))
 	      ;; That didn't succeed, so include the macro expansion in the result
 	      (T (return FORM)))))))
-  
+
 ;;; The user function may call back into this if doing a MAPFORMS
 (DEFUN MAPFORMS-1 (FORM &OPTIONAL (USAGE 'EVAL))
   (COPYFORMS-1 FORM USAGE)
@@ -810,7 +809,7 @@ an argument of T when an iteration is entered and NIL when it is left."
 	   ;; First match up templates with forms, special-casing REPEAT
 	   ;; Each element of FORMS is a form, or a list of forms to repeat through
 	   ;; Each element of QUEUE is a list (priority template cons-of-FORMS)
-	   (LOOP FOR X IN (CDAR TEMPLATE) WITH L = ARGL
+	   (LOOP WITH L = ARGL FOR X IN (CDAR TEMPLATE) 
 		 AS N = (FIRST X) AND TEM = (SECOND X)
 		 COLLECT
 		   (COND ((AND (LISTP TEM) (EQ (CAR TEM) 'REPEAT))

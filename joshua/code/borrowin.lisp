@@ -78,7 +78,7 @@
 (defun get-setf-method (form &optional env)
   (get-setf-expansion form env))
 
-#+sbcl
+#+(or sbcl lispworks)
 (defun get-setf-method-multiple-value (form &optional env)
   ;; see get-setf-method for a description of the env arg.
   ;; Like get-setf-method, but may return multiple new-value variables.
@@ -283,7 +283,7 @@
 
 #-mcl
 (defun class-instance-slots (class)
-  #+(Or allegro sbcl) (finalize-inheritance class)
+  #+(Or allegro sbcl lispworks) (finalize-inheritance class)
   (loop for slot-definition in (class-slots class)
       for allocation = (slot-definition-allocation slot-definition)
       when (eql allocation :instance)

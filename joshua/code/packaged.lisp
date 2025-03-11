@@ -93,9 +93,9 @@
   #+mcl (:shadow "CLEAR" "CCL")
   #+lucid (:shadow using-resource clear-resource)
   #+allegro (:import-from excl with-stack-list with-stack-list*)
-  #+allegro (:import-from clos finalize-inheritance class-slots slot-definition-allocation class-finalized-p intern-eql-specializer)
+  #+(or allegro lispworks) (:import-from clos finalize-inheritance class-slots slot-definition-allocation class-finalized-p #-lispworks intern-eql-specializer)
   #+(or genera cloe-developer) (:import-from sys with-stack-list with-stack-list* stack-let)
-  #+sbcl(:import-from sb-mop slot-definition-allocation class-slots finalize-inheritance class-finalized-p intern-eql-specializer)
+  #+sbcl (:import-from sb-mop slot-definition-allocation class-slots finalize-inheritance class-finalized-p intern-eql-specializer)
   (:export
    "JOSHUA-MODULE" "SEPARATE-DESTINATION-JOSHUA-MODULE"
     "ENABLE-JOSHUA" "DISABLE-JOSHUA"
@@ -251,12 +251,15 @@
   #+allegro (:import-from excl compiler-let funwrap fwrap arglist def-fwrapper call-next-fwrapper)
   #+sbcl (:import-from sb-mop slot-definition-name class-precedence-list)
   #+sbcl (:import-from sb-mop method-specializers generic-function-methods class-direct-subclasses)
+  #+lispworks (:import-from lw get-setf-method define-setf-method compiler-let)
+  #+lispworks (:import-from clos slot-definition-name class-precedence-list)
+  #+lispworks (:import-from clos method-specializers generic-function-methods class-direct-subclasses)
   (:use :joshua
          #+genera "CL"
          #+cloe "CLOE"
 	 #+mcl "COMMON-LISP"
 	 #+lucid "LISP" #+lucid "LUCID-COMMON-LISP" #+lucid "CLOS"
-	 #+(or allegro sbcl) :common-lisp)
+	 #+(or allegro sbcl lispworks) :common-lisp)
   ;; "Well, if you insist"
   (:export
     "*BLINK-PREDICATIONS-IN-JOSHUA-MODE*"   "*BLINK-SETS-IN-JOSHUA-MODE*"
@@ -340,7 +343,7 @@
          #+genera "CL"
          #+cloe "CLOE"
 	 #+mcl "COMMON-LISP"
-	 #+(or allegro sbcl) :common-lisp
+	 #+(or allegro sbcl lispworks) :common-lisp
 	 #+lucid "LISP" #+lucid "LUCID-COMMON-LISP" #+lucid "CLOS"))
 
 (defpackage ltms
@@ -351,7 +354,7 @@
          #+genera "CL"
          #+cloe "CLOE"
 	 #+mcl "COMMON-LISP"
-	 #+(or allegro sbcl) :common-lisp
+	 #+(or allegro sbcl lispworks) :common-lisp
 	 #+lucid "LISP" #+lucid "LUCID-COMMON-LISP" #+lucid "CLOS")
   ;; This is for the object-modelling Stuff
   (:shadow "VALUE-OF" "OBJECT-TYPE-OF" "PART-OF" "NAMED-PART-OF" "EQUATED")
@@ -379,14 +382,15 @@
   (:use #+cloe "CLOE"
 	#+genera "CL"
 	#+mcl "COMMON-LISP"
-	#+(or allegro sbcl) :common-lisp
+	#+(or allegro sbcl lispworks) :common-lisp
 	#+lucid "LISP" #+lucid "LUCID-COMMON-LISP" #+lucid "CLOS")
-  #+(or mcl lucid allegro sbcl) (:import-from joshua WITH-STACK-LIST WITH-STACK-LIST* STACK-LET)
+  #+(or mcl lucid allegro sbcl lispworks) (:import-from joshua WITH-STACK-LIST WITH-STACK-LIST* STACK-LET)
   #+mcl (:import-from CCL compiler-let)
   #+lucid (:Import-from LOOP LOOP-FINISH)
   #+(or genera cloe-developer) (:import-from SYS WITH-STACK-LIST WITH-STACK-LIST* STACK-LET)
   #+genera (:import-from lisp compiler-let)
   #+allegro (:import-from excl compiler-let)
+  #+lispworks (:import-from lw compiler-let)
   ;; In the Genera world, we use Genera's lt templates as well as our
   ;; own.  This makes the symbols in templates be the same in both LT
   ;; and JLT, except for a couple which are also Symbolics Common Lisp

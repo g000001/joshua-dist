@@ -174,8 +174,8 @@
 	     for keyword in keywords
 	     collecting `(,arg-name (getf ,control-structure-args ,keyword)))
      (declare (ignorable ,@arg-names))
-     (let ((,allow-unknown-p (copy-list ,control-structure-args)))
-       (mapc #'(lambda (x) (remf ,allow-unknown-p x)) ',keywords)
+     (let ((,allow-unknown-p (copy-alist ,control-structure-args)))
+       (mapc #'(lambda (x) (cl:remf ,allow-unknown-p x)) ',keywords)
        ,@(when (not supplied-p)
 	   `((when ,allow-unknown-p
 	       (error "Unhandled control structure arguments: ~S" ,allow-unknown-p))))
@@ -211,7 +211,7 @@
    (let ((*forward-rule-trigger-compiler-environment* environment))
      (declare (special *forward-rule-trigger-compiler-environment*))
      ;; first, parse up the arguments to the control structure
-     (with-control-structure-arguments ((importance semi-unification certainty documentatoin) arguments)
+     (with-control-structure-arguments ((importance semi-unification certainty documentation) arguments)
        ;; this implementation is a kludge that awaits the rest of the generic rule compiler.
        ;; its advantage over the previous implementation is that all the kludges are in the same place!
        (setq importance (process-importance importance))
@@ -742,22 +742,22 @@
   ;; There's a portable way to get the augmented environment
   ;; which is ungodly but used in the jlt code walker.
   (block called-succeed
-      (jlt:mapforms
-       #'(lambda (subform kind usage state)
-	   (declare (ignorable kind))
-	   ;; (format *trace-output* "~%Form ~a kind ~a usage ~a state ~a" subform kind usage state)
-	   (cond
-	    ((and (listp subform) (eql (first subform) 'logic-variable-maker))
-	     ;; don't macroexpand this, there can't be a call to succeed inside of it
-	     (values subform t state))
-	    ((and (member usage '(jlt::eval jlt::effect))
-		  (consp subform) (eq (car subform) 'succeed))
-	     ;; return t when we see a call to succeed
-	     (return-from called-succeed t))
-	    ;; otherwise continue code-walking
-	    (t (values subform nil state))))
-       form
-       :host-environment environment)))
+    (jlt:mapforms
+     #'(lambda (subform kind usage state)
+         (declare (ignorable kind))
+         ;; (format *trace-output* "~%Form ~a kind ~a usage ~a state ~a" subform kind usage state)
+         (cond
+          ((and (listp subform) (eql (first subform) 'logic-variable-maker))
+           ;; don't macroexpand this, there can't be a call to succeed inside of it
+           (values subform t state))
+          ((and (member usage '(jlt::eval jlt::effect))
+                (consp subform) (eq (car subform) 'succeed))
+           ;; return t when we see a call to succeed
+           (return-from called-succeed t))
+          ;; otherwise continue code-walking
+          (t (values subform nil state))))
+     form
+     :host-environment environment)))
 
 ;;; The default head matcher for backward chaining rules.
 

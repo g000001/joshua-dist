@@ -306,6 +306,8 @@
 	;; truth-value has changed, allow noticers to run
 	(act-on-truth-value-change self old-truth-value old-state)))))
 
+
+
 (define-predicate-method (notice-truth-value-change default-tell-model) (old-truth-value)
   ;; default noticer, does nothing.
   (declare (ignore old-truth-value))

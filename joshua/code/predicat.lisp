@@ -552,8 +552,8 @@
 	      (if (list-has-logic-variables-p statement) 1 0))))))
 
 ;;; BUG: this should record the entire bits field.
-(defmethod make-load-form ((self predication) #+(or mcl allegro sbcl) &optional #+(or mcl allegro sbcl) environment)
-  #+(or mcl allegro sbcl) (declare (ignore environment))
+(defmethod make-load-form ((self predication) #+ansi-cl &optional #+ansi-cl environment)
+  #+ansi-cl (declare (ignore environment))
   (with-slots (STATEMENT) self
     ;; Makes an instance of the right flavor.  Relies on make-instance method, above,
     ;; for destructuring and such.  Indexing is somebody else's job.

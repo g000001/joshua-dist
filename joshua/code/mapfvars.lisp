@@ -73,6 +73,12 @@
 	    (declare (arg-template . quote))
 	    (eval-when (arg-template quote (repeat return)))
 	    (flet (arg-template))
+            #+lispworks
+            (symbol-macrolet (arg-template))
+            #+lispworks
+            (macrolet (arg-template))
+            #+lispworks
+            (sys::bq-list (arg-template))
 	    #+genera
 	    (lisp:function (arg-template call))
 	    #-genera

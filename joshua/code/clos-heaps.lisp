@@ -204,7 +204,7 @@
 ;;;    (list* bindings prologue iterspec)))
 ;;;)
 
-#-(or genera lucid mcl allegro sbcl)
+#-(or genera lucid ansi-cl)
 (defun y-or-n-p (&rest format-args)
   (terpri *query-io*)
   (apply #'format *query-io* format-args)
